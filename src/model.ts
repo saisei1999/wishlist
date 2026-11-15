@@ -281,6 +281,33 @@ export function faviconUrl(url: string | undefined): string | null {
 const DOMAIN_TAIL = /\.(com|co\.uk|co\.jp|com\.au|com\.br|com\.mx|co\.nz|co\.za|net|org|io|so|app|shop|store|dev|gg|us|uk|de|fr|it|es|nl|se|pl|ca|ie|in|ae|sg|sa|eg)$/i;
 
 /**
+ * A readable stand-in for a link we could not read: "amazon.com · B0F2PYB1GJ"
+ * rather than the raw URL sprawled across a card.
+ */
+export function titleFromUrl(value: string | undefined): string {
+  if (!value) return 'Untitled want';
+  try {
+    const url = new URL(value);
+    const host = url.hostname.replace(/^www\./, '');
+    const segment =
+      url.pathname
+        .split('/')
+        .filter(Boolean)
+        .filter((part) => !/^(dp|gp|product|p|us|en|store|products?)$/i.test(part))
+        // A bare "00" or "1" tells nobody anything.
+        .filter((part) => part.replace(/[-_]/g, ' ').trim().length >= 3)
+        .pop() ?? '';
+    const tail = segment.replace(/[-_]+/g, ' ').replace(/\.(html?|php|aspx)$/i, '').trim();
+    if (!tail) return host;
+    // ASINs and SKUs read better upper case; prose slugs stay as they are.
+    const clean = /^[a-z0-9]{10}$/i.test(tail) ? tail.toUpperCase() : tail;
+    return `${host} · ${clean.slice(0, 40)}`;
+  } catch {
+    return 'Untitled want';
+  }
+}
+
+/**
  * The brand to lead the chip with: what the page calls itself, minus the domain
  * tail, or the site's own host when it says nothing. Never invented.
  */

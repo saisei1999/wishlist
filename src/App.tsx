@@ -23,6 +23,7 @@ import {
   pruneCandidates,
   reorderBefore,
   tagIndex,
+  titleFromUrl,
   TIER_LABELS,
   TIERS,
   type Collection,
@@ -171,7 +172,7 @@ export default function App() {
       const stamp = nowIso();
       const item: Item = {
         id: newId(),
-        title: input.title || input.url || 'Untitled want',
+        title: input.title || titleFromUrl(input.url),
         url: input.url,
         why: input.why,
         tags: [],
@@ -213,6 +214,44 @@ export default function App() {
     },
     [items, save],
   );
+
+  /**
+   * Self-heal old cards: an item saved while previews were off wears the raw URL
+   * as its title and has no picture. Once a proxy is configured, enrich those
+   * quietly, one at a time, and once per item per session.
+   */
+  const healed = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!loaded || !proxyReady(settings.proxyUrl)) return;
+    const pending = items.filter(
+      (item) =>
+        item.url &&
+        !healed.current.has(item.id) &&
+        (/^https?:\/\//i.test(item.title) || !item.image),
+    );
+    if (pending.length === 0) return;
+
+    let alive = true;
+    void (async () => {
+      for (const item of pending.slice(0, 4)) {
+        healed.current.add(item.id);
+        const outcome = await unfurl(settings.proxyUrl, item.url as string);
+        if (!alive) return;
+        if (!outcome.ok) continue;
+        const patch: Partial<Item> = {};
+        if (outcome.result.title) {
+          patch.title = condenseTitle(outcome.result.title, outcome.result.siteName ?? undefined).slice(0, 160);
+        }
+        if (outcome.result.image) patch.image = outcome.result.image;
+        if (outcome.result.siteName) patch.siteName = outcome.result.siteName;
+        if (Object.keys(patch).length > 0) await updateItem(item.id, patch);
+      }
+      if (alive) setNotice('Tidied up previews on older cards.');
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [items, loaded, settings.proxyUrl, updateItem]);
 
   const openEditor = (item: Item, trigger?: HTMLElement | null, focus: 'title' | 'brand' = 'title') => {
     triggerRef.current = trigger ?? (document.activeElement as HTMLElement | null);
