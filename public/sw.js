@@ -10,7 +10,9 @@ const DB_NAME = 'wishlist';
 const DB_VERSION = 1;
 const META = 'meta';
 const PENDING_KEY = 'pendingShare';
-const SHELL = 'wishlist-shell-v1';
+// Bump on release: the previous shell cache is deleted on activate, so an old
+// build's HTML can never win over a fresh one.
+const SHELL = 'wishlist-shell-v2';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
