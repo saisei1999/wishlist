@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Dialog } from './Dialog';
 import {
+  condenseTitle,
   isHttpUrl,
   monogram,
   normalizedTags,
@@ -130,7 +131,9 @@ export function EditorPane({
     }
     setForm((old) => ({
       ...old,
-      title: outcome.result.title && old.title.trim().length === 0 ? outcome.result.title : old.title,
+      // An explicit "Fetch preview" also refreshes the title: the page's own
+      // product name beats whatever we stored at capture time.
+      title: outcome.result.title ? condenseTitle(outcome.result.title, outcome.result.siteName ?? undefined) : old.title,
       image: outcome.result.image ?? old.image,
     }));
     setFetchNote(outcome.result.image ? 'Preview updated.' : 'No preview image on that page.');

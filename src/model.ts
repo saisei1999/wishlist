@@ -230,6 +230,12 @@ export function monogram(title: string): string {
 export function condenseTitle(title: string, siteName?: string, max = 72): string {
   let text = title.replace(/\s+/g, ' ').trim();
 
+  // Amazon wraps every title as "Amazon.com: <product> : <Department>". Both
+  // wrappers are noise, and leaving them in wastes the visible characters on the
+  // word "Amazon" instead of the product's own name.
+  text = text.replace(/^amazon\.(?:com|co\.uk|de|fr|it|es|ca|co\.jp|in|com\.au|nl|se|pl|com\.mx|com\.br|ae|sg|sa|eg|com\.tr|ie)\s*:\s*/i, '');
+  text = text.replace(/\s*:\s*(?:electronics|musical instruments|home & kitchen|tools & home improvement|clothing, shoes & jewelry|books|video games|computers & accessories|cell phones & accessories|health & household|beauty & personal care|sports & outdoors|toys & games|office products|pet supplies|grocery & gourmet food|industrial & scientific|arts, crafts & sewing|automotive|appliances|garden & outdoor|luggage & travel gear|movies & tv|cds & vinyl|software|everything else)\s*$/i, '');
+
   const host = siteName?.replace(/^www\./, '').trim();
   // "UNIQLO" should match "uniqlo.com", so the bare brand counts as the host too.
   const names = [host, host?.split('.')[0]].filter((value): value is string => Boolean(value && value.length > 2));

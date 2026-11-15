@@ -37,6 +37,19 @@ describe('condenseTitle', () => {
     expect(condenseTitle('   ')).toBe('');
     expect(condenseTitle('X')).toBe('X');
   });
+
+  it('unwraps Amazon titles instead of spending the visible text on "Amazon.com"', () => {
+    const raw =
+      'Amazon.com: Shure MV7X Microphone and Deluxe Articulating Desktop Mic Boom Stand - Pro Quality Dynamic Mic for Podcasting & Vocal Recording : Musical Instruments';
+    const out = condenseTitle(raw, 'amazon.com');
+    expect(out.startsWith('Shure MV7X')).toBe(true);
+    expect(out).not.toContain('Amazon.com');
+    expect(out).not.toContain('Musical Instruments');
+  });
+
+  it('keeps a short Amazon product name intact', () => {
+    expect(condenseTitle('Amazon.com: Amazon Echo Dot (3rd Gen) : Electronics', 'amazon.com')).toBe('Amazon Echo Dot (3rd Gen)');
+  });
 });
 
 describe('faviconUrl', () => {
