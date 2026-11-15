@@ -269,3 +269,32 @@ export function faviconUrl(url: string | undefined): string | null {
     return null;
   }
 }
+
+const DOMAIN_TAIL = /\.(com|co\.uk|co\.jp|com\.au|com\.br|com\.mx|co\.nz|co\.za|net|org|io|so|app|shop|store|dev|gg|us|uk|de|fr|it|es|nl|se|pl|ca|ie|in|ae|sg|sa|eg)$/i;
+
+/**
+ * The brand to lead the chip with: what the page calls itself, minus the domain
+ * tail, or the site's own host when it says nothing. Never invented.
+ */
+export function brandName(item: { siteName?: string; url?: string }): string | null {
+  const tidy = (value: string) => {
+    const trimmed = value.trim();
+    // "amazon" reads like a typo next to a bold chip; "UNIQLO" is left alone.
+    return trimmed === trimmed.toLowerCase() ? trimmed.charAt(0).toUpperCase() + trimmed.slice(1) : trimmed;
+  };
+
+  const fromPage = item.siteName?.replace(/^www\./i, '').trim();
+  if (fromPage) {
+    const cleaned = fromPage.replace(DOMAIN_TAIL, '').trim();
+    if (cleaned) return tidy(cleaned);
+  }
+  if (!item.url) return null;
+  try {
+    const host = new URL(item.url).hostname.replace(/^www\./i, '');
+    const label = host.split('.')[0];
+    if (!label) return null;
+    return tidy(label);
+  } catch {
+    return null;
+  }
+}

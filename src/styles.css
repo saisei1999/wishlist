@@ -375,6 +375,19 @@ h1 .count { font-size: 15px; font-weight: 600; color: #5b7381; margin-left: 8px;
   -webkit-box-orient: vertical;
   overflow: hidden;
   overflow-wrap: anywhere;
+  color: #556a76;
+  font-weight: 500;
+}
+/* The brand leads the chip and carries the weight; the product name follows. */
+.chip-brand {
+  color: #17303f;
+  font-weight: 700;
+  letter-spacing: -0.1px;
+}
+.chip-sep {
+  margin: 0 5px;
+  color: #93a7ae;
+  font-weight: 400;
 }
 .favicon {
   position: relative;

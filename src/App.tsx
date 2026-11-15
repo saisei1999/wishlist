@@ -6,6 +6,7 @@ import { EditorPane } from './components/EditorPane';
 import { ItemCard } from './components/ItemCard';
 import { SettingsView } from './components/SettingsView';
 import {
+  brandName,
   byTierAndOrder,
   condenseTitle,
   DEFAULT_SETTINGS,
@@ -425,7 +426,15 @@ export default function App() {
                 </div>
                 <div className="body">
                   <p className="eyebrow">NEXT BUY</p>
-                  <h2>{condenseTitle(featured.title, featured.siteName ?? undefined, 64)}</h2>
+                  <h2>
+                    {brandName(featured) ? (
+                      <>
+                        <strong className="chip-brand">{brandName(featured)}</strong>
+                        <span className="chip-sep">·</span>
+                      </>
+                    ) : null}
+                    {condenseTitle(featured.title, featured.siteName ?? undefined, 64)}
+                  </h2>
                   <p className="meta">
                     {formatUsd(featured.price) ? <span>{formatUsd(featured.price)}</span> : <span>No price yet</span>}
                     {featured.why ? <span>{featured.why}</span> : null}

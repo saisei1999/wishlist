@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  brandName,
   condenseTitle,
   faviconUrl,
   formatUsd,
@@ -42,6 +43,12 @@ export function ItemCard({
   const [faviconLoaded, setFaviconLoaded] = useState(false);
   const icon = faviconUrl(item.url);
   const displayTitle = condenseTitle(item.title, item.siteName);
+  const brand = brandName(item);
+  // The brand already leads the chip, so drop it from the tail of the title.
+  const titleTail =
+    brand && displayTitle.toLowerCase().startsWith(brand.toLowerCase())
+      ? displayTitle.slice(brand.length).replace(/^[\s:–—|-]+/, '')
+      : displayTitle;
 
   return (
     <article
@@ -133,7 +140,15 @@ export function ItemCard({
                 />
               ) : null}
             </span>
-            <span className="card-title-text">{displayTitle}</span>
+            <span className="card-title-text">
+              {brand ? (
+                <>
+                  <strong className="chip-brand">{brand}</strong>
+                  {titleTail ? <span className="chip-sep">·</span> : null}
+                </>
+              ) : null}
+              {titleTail}
+            </span>
           </a>
         ) : (
           <button type="button" className="card-title" onClick={(event) => onOpen(item, event.currentTarget)}>
