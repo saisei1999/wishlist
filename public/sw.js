@@ -12,7 +12,7 @@ const META = 'meta';
 const PENDING_KEY = 'pendingShare';
 // Bump on release: the previous shell cache is deleted on activate, so an old
 // build's HTML can never win over a fresh one.
-const SHELL = 'wishlist-shell-v2';
+const SHELL = 'wishlist-shell-v3';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
@@ -86,7 +86,10 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       (async () => {
         try {
-          const response = await fetch(request);
+          // no-store: an HTML page sitting in the HTTP cache would keep pointing
+          // at the previous build's hashed assets, which is how a fix can appear
+          // deployed and still be invisible.
+          const response = await fetch(request, { cache: 'no-store' });
           const cache = await caches.open(SHELL);
           cache.put(request, response.clone());
           return response;
