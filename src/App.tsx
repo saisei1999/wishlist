@@ -91,6 +91,7 @@ export default function App() {
   const [pruneOpen, setPruneOpen] = useState<Item[]>([]);
   const [snoozed, setSnoozed] = useState(true);
   const [notice, setNotice] = useState('');
+  const [editorFocus, setEditorFocus] = useState<'title' | 'brand'>('title');
   const triggerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -213,8 +214,9 @@ export default function App() {
     [items, save],
   );
 
-  const openEditor = (item: Item, trigger?: HTMLElement | null) => {
+  const openEditor = (item: Item, trigger?: HTMLElement | null, focus: 'title' | 'brand' = 'title') => {
     triggerRef.current = trigger ?? (document.activeElement as HTMLElement | null);
+    setEditorFocus(focus);
     setEditingId(item.id);
   };
 
@@ -590,6 +592,7 @@ export default function App() {
                         setNotice('That page carries no preview picture. Paste an image URL in the editor.');
                       }
                     }}
+                    onAddBrand={(target, trigger) => openEditor(target, trigger, 'brand')}
 
                     onDragStart={() => undefined}
                     onDropBefore={(draggedId, targetId) => {
@@ -720,6 +723,7 @@ export default function App() {
           collections={collections}
           tagSuggestions={allTags}
           proxyUrl={settings.proxyUrl}
+          initialFocus={editorFocus}
           onClose={closeEditor}
           onSave={(patch) => updateItem(editing.id, patch)}
           onDelete={async () => {

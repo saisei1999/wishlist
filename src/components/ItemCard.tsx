@@ -17,6 +17,7 @@ type Props = {
   collections: Collection[];
   onOpen: (item: Item, trigger?: HTMLElement | null) => void;
   onFetchImage: (item: Item) => void;
+  onAddBrand: (item: Item, trigger?: HTMLElement | null) => void;
   canFetchImage: boolean;
   onDragStart: (item: Item) => void;
   onDropBefore: (draggedId: string, targetId: string) => void;
@@ -29,6 +30,7 @@ export function ItemCard({
   collections,
   onOpen,
   onFetchImage,
+  onAddBrand,
   canFetchImage,
   onDragStart,
   onDropBefore,
@@ -171,6 +173,16 @@ export function ItemCard({
             </span>
           ))}
           {item.tags.length > 2 ? <span className="chip">+{item.tags.length - 2}</span> : null}
+          {/* No maker known for this one: offer to name it rather than guess. */}
+          {!product && shop ? (
+            <button
+              type="button"
+              className="chip chip-add"
+              onClick={(event) => onAddBrand(item, event.currentTarget)}
+            >
+              + brand
+            </button>
+          ) : null}
         </div>
       </div>
     </article>

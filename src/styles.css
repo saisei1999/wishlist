@@ -446,6 +446,15 @@ h1 .count { font-size: 15px; font-weight: 600; color: #5b7381; margin-left: 8px;
   font-size: 11px;
 }
 .chip.collection { background: #e3eef1; border-color: #cbdfe4; }
+.chip-add {
+  border-style: dashed;
+  border-color: #bfd3d9;
+  background: transparent;
+  color: #41606d;
+  font-weight: 600;
+  min-height: 28px;
+}
+.chip-add:hover { background: #e9f2f3; }
 .chip button { border: 0; background: none; padding: 0; color: inherit; font-size: 11px; }
 
 /* The tier select is a real control: give it a real target, not a 19px strip. */

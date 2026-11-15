@@ -19,6 +19,8 @@ type Props = {
   collections: Collection[];
   tagSuggestions: string[];
   proxyUrl: string;
+  /** Where the caret should land when the pane opens. */
+  initialFocus?: 'title' | 'brand';
   onClose: () => void;
   onSave: (patch: Partial<Item>) => Promise<boolean>;
   onDelete: () => Promise<void>;
@@ -67,7 +69,16 @@ function toNumber(value: string): number | undefined {
  * The item editor. Escape always closes: with unsaved edits it asks first, but it
  * never strands the user inside the pane.
  */
-export function EditorPane({ item, collections, tagSuggestions, proxyUrl, onClose, onSave, onDelete }: Props) {
+export function EditorPane({
+  item,
+  collections,
+  tagSuggestions,
+  proxyUrl,
+  initialFocus = 'title',
+  onClose,
+  onSave,
+  onDelete,
+}: Props) {
   const [form, setForm] = useState<FormState>(() => toForm(item));
   const [baseline, setBaseline] = useState<FormState>(() => toForm(item));
   const [saving, setSaving] = useState(false);
@@ -77,12 +88,14 @@ export function EditorPane({ item, collections, tagSuggestions, proxyUrl, onClos
   const [fetching, setFetching] = useState(false);
   const [fetchNote, setFetchNote] = useState('');
   const titleRef = useRef<HTMLInputElement>(null);
+  const brandRef = useRef<HTMLInputElement>(null);
 
   const dirty = JSON.stringify(form) !== JSON.stringify(baseline);
 
   useEffect(() => {
-    titleRef.current?.focus();
-  }, []);
+    if (initialFocus === 'brand') brandRef.current?.focus();
+    else titleRef.current?.focus();
+  }, [initialFocus]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -247,6 +260,7 @@ export function EditorPane({ item, collections, tagSuggestions, proxyUrl, onClos
             Item brand <small>the maker, not the shop — e.g. Shure</small>
           </span>
           <input
+            ref={brandRef}
             placeholder="Shure"
             value={form.brand}
             maxLength={60}
