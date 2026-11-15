@@ -21,9 +21,13 @@ export function proxyReady(proxyUrl: string): boolean {
   }
 }
 
+/** Tracker pixels and sprites are never a product picture. */
+const JUNK_IMAGE = /sprite|icon|logo|pixel|beacon|analytics|tracking|1x1|blank|spacer|\/batch\/|fls-na|\.svg(?:\?|$)/i;
+
 /** Only absolute https image URLs are kept; anything else becomes null. */
 export function safeImage(value: unknown): string | null {
   if (typeof value !== 'string' || !value) return null;
+  if (JUNK_IMAGE.test(value)) return null;
   try {
     const url = new URL(value);
     return url.protocol === 'https:' ? url.toString() : null;
@@ -48,6 +52,8 @@ export async function unfurl(proxyUrl: string, target: string, signal?: AbortSig
     const response = await fetch(endpoint.toString(), {
       signal: signal ?? AbortSignal.timeout(8000),
       headers: { accept: 'application/json' },
+      // A stale preview is worse than a slow one: always ask the worker fresh.
+      cache: 'no-store',
     });
     if (!response.ok) return { ok: false, reason: 'failed' };
     const payload: unknown = await response.json();

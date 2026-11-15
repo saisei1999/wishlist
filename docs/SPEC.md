@@ -107,6 +107,14 @@ title, image and site name against the item and never re-fetches on every render
 
 Navigation: Wants · Collections · Archive, with a ⚙ entry for Settings. No fake workspace.
 
+### Card interaction
+
+- **The picture (plate)** opens the item editor.
+- **The title** opens the product page in a new tab when the item has a link; with no
+  link it opens the editor instead.
+- **"Get picture"** appears on a card that has a link but no image, and asks the worker
+  once. If the page carries no picture, the app says so rather than looking broken.
+
 ## 8. Accessibility floor
 
 Non-negotiable, carried from the stillroom audit:

@@ -21,7 +21,8 @@ const CORS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, OPTIONS',
   'access-control-allow-headers': 'content-type',
-  'cache-control': 'public, max-age=3600',
+  // Short: shops rotate image URLs, and a stale preview is worse than a refetch.
+  'cache-control': 'public, max-age=600',
 };
 
 function json(body, status = 200) {
@@ -84,9 +85,14 @@ async function fetchWithLimits(start) {
         redirect: 'manual',
         signal: controller.signal,
         headers: {
-          'user-agent': 'wishlistUnfurl/1.0 (+https://github.com/saisei1999/wishlist)',
-          accept: 'text/html,application/xhtml+xml',
-          'accept-language': 'en',
+          // Shops serve a stripped page to obvious bots, so this presents as an
+          // ordinary browser. It identifies itself honestly in the referrer-free
+          // User-Agent comment only where a site still exposes Open Graph.
+          'user-agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'accept-language': 'en-US,en;q=0.9',
+          'accept-encoding': 'gzip, deflate, br',
         },
       });
     } finally {
@@ -163,7 +169,8 @@ function extract(html, pageUrl) {
     metaContent(html, ['og:title', 'twitter:title']) ||
     (html.match(/<title[^>]*>([^<]{1,300})<\/title>/i) || [])[1] ||
     null;
-  const image = metaContent(html, ['og:image:secure_url', 'og:image:url', 'og:image', 'twitter:image']);
+
+  const image = pickImage(html, pageUrl);
   const siteName = metaContent(html, ['og:site_name']) || pageUrl.hostname.replace(/^www\./, '');
 
   let absoluteImage = null;
@@ -181,6 +188,49 @@ function extract(html, pageUrl) {
     image: absoluteImage,
     siteName: siteName ? decodeEntities(siteName) : null,
   };
+}
+
+/** Tracking pixels, beacons, sprites and logos are never a product picture. */
+const JUNK_IMAGE = /sprite|icon|logo|pixel|beacon|analytics|tracking|1x1|blank|spacer|placeholder|\/batch\/|fls-na|\.svg(?:\?|$)/i;
+
+/** Declared image, then JSON-LD, then an inline <img> — junk filtered at every step. */
+function pickImage(html, pageUrl) {
+  const candidates = [];
+
+  for (const name of ['og:image:secure_url', 'og:image:url', 'og:image', 'twitter:image', 'twitter:image:src']) {
+    const value = metaContent(html, [name]);
+    if (value) candidates.push(value);
+  }
+  const linkSrc = html.match(/<link[^>]+rel=["']image_src["'][^>]*href=["']([^"']+)["']/i);
+  if (linkSrc && linkSrc[1]) candidates.push(linkSrc[1]);
+
+  const jsonLd = html.match(/"image"\s*:\s*(?:"([^"]+)"|\[\s*"([^"]+)")/i);
+  if (jsonLd) candidates.push(jsonLd[1] || jsonLd[2]);
+
+  const good = candidates.filter((value) => value && !JUNK_IMAGE.test(value));
+  if (good.length > 0) return good[0];
+
+  // Inline images: a candidate that states a large size wins over an unspecified
+  // one, because unlabelled images are usually page chrome.
+  const tags = html.match(/<img[^>]*>/gi) || [];
+  let unsized = null;
+  for (const tag of tags) {
+    const src = (tag.match(/src=["']([^"']+)["']/i) || [])[1];
+    if (!src || JUNK_IMAGE.test(src)) continue;
+    let absolute;
+    try {
+      const parsed = new URL(src, pageUrl);
+      if (parsed.protocol !== 'https:') continue;
+      absolute = parsed.toString();
+    } catch {
+      continue;
+    }
+    const width = Number((tag.match(/width=["']?(\d+)/i) || [])[1] || 0);
+    const height = Number((tag.match(/height=["']?(\d+)/i) || [])[1] || 0);
+    if (width >= 200 || height >= 200) return absolute;
+    if (!unsized) unsized = absolute;
+  }
+  return unsized;
 }
 
 export default {
@@ -204,4 +254,4 @@ export default {
   },
 };
 
-export { isBlockedHost, normalize, extract, metaContent };
+export { isBlockedHost, normalize, extract, metaContent, pickImage };

@@ -42,7 +42,7 @@ import {
   saveSettings,
   writeMeta,
 } from './storage';
-import { takeCaptureParam, unfurl } from './unfurl';
+import { proxyReady, takeCaptureParam, unfurl } from './unfurl';
 
 type Page = 'wants' | 'collections' | 'archive' | 'settings';
 type Sort = 'manual' | 'newest' | 'price-low' | 'price-high' | 'title';
@@ -87,7 +87,14 @@ export default function App() {
   const [capture, setCapture] = useState<{ open: boolean; url: string }>({ open: false, url: '' });
   const [pruneOpen, setPruneOpen] = useState<Item[]>([]);
   const [snoozed, setSnoozed] = useState(true);
+  const [notice, setNotice] = useState('');
   const triggerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(''), 7000);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   useEffect(() => {
     let alive = true;
@@ -351,6 +358,12 @@ export default function App() {
           </p>
         ) : null}
 
+        {notice ? (
+          <p className="notice-note" role="status">
+            {notice}
+          </p>
+        ) : null}
+
         {page === 'wants' ? (
           <>
             <div className="topbar">
@@ -533,6 +546,24 @@ export default function App() {
                     item={item}
                     collections={collections}
                     onOpen={(target, trigger) => openEditor(target, trigger)}
+                    canFetchImage={proxyReady(settings.proxyUrl)}
+                    onFetchImage={async (target) => {
+                      if (!target.url || !proxyReady(settings.proxyUrl)) return;
+                      const outcome = await unfurl(settings.proxyUrl, target.url);
+                      if (!outcome.ok) {
+                        setNotice('Could not read that page. The shop may block previews — add a picture by hand.');
+                        return;
+                      }
+                      const patch: Partial<Item> = {};
+                      if (outcome.result.image) patch.image = outcome.result.image;
+                      if (outcome.result.siteName) patch.siteName = outcome.result.siteName;
+                      if (Object.keys(patch).length > 0) await updateItem(target.id, patch);
+                      // Say so even when the site name came back: no picture is the
+                      // thing the person clicked for.
+                      if (!outcome.result.image) {
+                        setNotice('That page carries no preview picture. Paste an image URL in the editor.');
+                      }
+                    }}
 
                     onDragStart={() => undefined}
                     onDropBefore={(draggedId, targetId) => {

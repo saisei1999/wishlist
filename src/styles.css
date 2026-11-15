@@ -322,6 +322,23 @@ h1 .count { font-size: 15px; font-weight: 600; color: #5b7381; margin-left: 8px;
   text-transform: uppercase;
 }
 
+/* Offered only when a card has a link but no picture yet. */
+.fetch-image {
+  position: absolute;
+  right: 10px; bottom: 10px;
+  z-index: 2;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #ffffff66;
+  border-radius: 999px;
+  background: #ffffff26;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  backdrop-filter: blur(6px);
+}
+.fetch-image:hover { background: #ffffff45; }
+
 .card-body { display: flex; flex-direction: column; flex: 1; padding: 10px 2px 0; min-width: 0; }
 .card-title {
   display: block;
@@ -337,6 +354,7 @@ h1 .count { font-size: 15px; font-weight: 600; color: #5b7381; margin-left: 8px;
   color: var(--ink-soft);
   text-align: left;
   letter-spacing: -0.15px;
+  text-decoration: none;
 }
 .card-title:hover { text-decoration: underline; }
 .card-why { margin: 3px 0 0; font-size: 12px; line-height: 1.45; color: var(--muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
@@ -556,6 +574,7 @@ h1 .count { font-size: 15px; font-weight: 600; color: #5b7381; margin-left: 8px;
 .dialog-actions .grow { margin-right: auto; }
 
 .error-note { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: #fdeceb; color: var(--danger); font-size: 12px; }
+.notice-note { margin: 14px 0 0; padding: 10px 12px; border: 1px solid #d6e3e6; border-radius: 10px; background: #eff6f7; color: #34535f; font-size: 12px; }
 .hint-note { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
 
 /* ---------- lists (collections, archive, settings) ---------- */

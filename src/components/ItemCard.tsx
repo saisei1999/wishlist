@@ -1,19 +1,34 @@
+import { useState } from 'react';
 import { formatUsd, monogram, targetDelta, TIER_LABELS, type Collection, type Item } from '../model';
 
 type Props = {
   item: Item;
   collections: Collection[];
   onOpen: (item: Item, trigger?: HTMLElement | null) => void;
+  onFetchImage: (item: Item) => void;
+  canFetchImage: boolean;
   onDragStart: (item: Item) => void;
   onDropBefore: (draggedId: string, targetId: string) => void;
   onNudge: (item: Item, direction: -1 | 1) => void;
 };
 
 /** One square card. The whole plate is the primary click target. */
-export function ItemCard({ item, collections, onOpen, onDragStart, onDropBefore, onNudge }: Props) {
+export function ItemCard({
+  item,
+  collections,
+  onOpen,
+  onFetchImage,
+  canFetchImage,
+  onDragStart,
+  onDropBefore,
+  onNudge,
+}: Props) {
   const price = formatUsd(item.price);
   const delta = targetDelta(item);
   const collection = collections.find((entry) => item.collectionIds.includes(entry.id));
+  // A hotlinked image can 404 or refuse to load; the colour plate is the fallback.
+  const [imageBroken, setImageBroken] = useState(false);
+  const showImage = Boolean(item.image) && !imageBroken;
 
   return (
     <article
@@ -44,8 +59,14 @@ export function ItemCard({ item, collections, onOpen, onDragStart, onDropBefore,
       aria-label={`${item.title}, ${TIER_LABELS[item.tier]}${price ? `, ${price}` : ''}`}
     >
       <div className="plate">
-        {item.image ? (
-          <img src={item.image} alt="" loading="lazy" referrerPolicy="no-referrer" />
+        {showImage ? (
+          <img
+            src={item.image}
+            alt=""
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setImageBroken(true)}
+          />
         ) : (
           <span className={`plate-fallback plate-${item.color}`} aria-hidden="true">
             {monogram(item.title)}
@@ -64,12 +85,36 @@ export function ItemCard({ item, collections, onOpen, onDragStart, onDropBefore,
           </p>
         ) : null}
         <p className="tier-tag">{TIER_LABELS[item.tier]}</p>
+        {!item.image && item.url && canFetchImage ? (
+          <button
+            type="button"
+            className="fetch-image"
+            onClick={(event) => {
+              event.stopPropagation();
+              onFetchImage(item);
+            }}
+          >
+            Get picture
+          </button>
+        ) : null}
       </div>
 
       <div className="card-body">
-        <button type="button" className="card-title" onClick={(event) => onOpen(item, event.currentTarget)}>
-          {item.title}
-        </button>
+        {item.url ? (
+          <a
+            className="card-title"
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`Open ${item.url}`}
+          >
+            {item.title}
+          </a>
+        ) : (
+          <button type="button" className="card-title" onClick={(event) => onOpen(item, event.currentTarget)}>
+            {item.title}
+          </button>
+        )}
         {item.why ? <p className="card-why">{item.why}</p> : null}
         <div className="card-foot">
           {collection ? <span className="chip collection">{collection.name}</span> : null}
