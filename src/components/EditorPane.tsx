@@ -239,6 +239,55 @@ export function EditorPane({ item, collections, tagSuggestions, proxyUrl, onClos
           />
         </label>
 
+        <div className="field">
+          <span>
+            Picture <small>URL, or upload one (max 2 MB)</small>
+          </span>
+          <input
+            type="url"
+            placeholder="https://…/photo.jpg"
+            value={form.image.startsWith('data:') ? '' : form.image}
+            onChange={(event) => set('image', event.target.value)}
+            aria-describedby="picture-note"
+          />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <label className="button-ghost" style={{ display: 'inline-flex', alignItems: 'center' }}>
+              Upload a picture
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  event.currentTarget.value = '';
+                  if (!file) return;
+                  if (file.size > 2_000_000) {
+                    setFetchNote('That picture is larger than 2 MB — use its link instead.');
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    set('image', String(reader.result ?? ''));
+                    setFetchNote('Picture added from your device.');
+                  };
+                  reader.onerror = () => setFetchNote('Could not read that file.');
+                  reader.readAsDataURL(file);
+                }}
+              />
+            </label>
+            {form.image ? (
+              <button type="button" className="button-danger" onClick={() => set('image', '')}>
+                Remove picture
+              </button>
+            ) : null}
+          </div>
+          <p className="hint-note" id="picture-note">
+            {form.image.startsWith('data:')
+              ? 'This picture lives inside your library and travels with the JSON backup.'
+              : 'Amazon blocks page reads, so paste a picture link or upload one for those.'}
+          </p>
+        </div>
+
         <div className="field-row">
           <label className="field">
             <span>Price (USD)</span>

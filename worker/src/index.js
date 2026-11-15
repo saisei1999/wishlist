@@ -193,6 +193,63 @@ function extract(html, pageUrl) {
 /** Tracking pixels, beacons, sprites and logos are never a product picture. */
 const JUNK_IMAGE = /sprite|icon|logo|pixel|beacon|analytics|tracking|1x1|blank|spacer|placeholder|\/batch\/|fls-na|\.svg(?:\?|$)/i;
 
+/* ---------------------------------------------------------------------------
+ * Amazon
+ *
+ * Amazon answers server requests with a robot wall, so no amount of HTML
+ * parsing yields a picture. Their catalogue image endpoint, however, is public
+ * and needs no API key, associate tag or signed request:
+ *
+ *   https://m.media-amazon.com/images/P/<ASIN>.01._SCLZZZZZZZ_SX500_.jpg
+ *
+ * The ASIN is already in the URL the user pasted, so the picture can be built
+ * straight from it. The result is verified to be an image before it is offered,
+ * and never rehosted.
+ * ------------------------------------------------------------------------- */
+
+const AMAZON_HOST =
+  /(^|\.)amazon\.(com|co\.uk|de|fr|it|es|ca|co\.jp|in|com\.au|nl|se|pl|com\.mx|com\.br|ae|sg|sa|eg|com\.tr|ie)$/i;
+
+function asinFromUrl(pageUrl) {
+  const match = pageUrl.pathname.match(
+    /\/(?:dp|gp\/product|gp\/aw\/d|gp\/offer-listing|product|dp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/i,
+  );
+  return match && match[1] ? match[1].toUpperCase() : null;
+}
+
+async function amazonImageUrl(asin) {
+  if (!asin) return null;
+  const candidates = [
+    // Classic catalogue endpoint: covers most products, no key or tag needed.
+    `https://m.media-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_SX500_.jpg`,
+    // Newer catalogue entries are not on the P/ path. This widget resolves the
+    // current image for an ASIN, also without an associate tag.
+    `https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=${asin}&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822&WS=1`,
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      const response = await fetch(candidate, {
+        headers: {
+          range: 'bytes=0-2047',
+          'user-agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        },
+        signal: AbortSignal.timeout(6000),
+      });
+      const type = response.headers.get('content-type') || '';
+      const length = Number(
+        response.headers.get('content-range')?.split('/')[1] || response.headers.get('content-length') || 0,
+      );
+      // Unknown ASINs get a ~43 byte placeholder GIF: require a real image.
+      if (response.ok && type.startsWith('image/') && length > 2000) return candidate;
+    } catch {
+      // Try the next path; no image at all is a valid answer.
+    }
+  }
+  return null;
+}
+
 /** Declared image, then JSON-LD, then an inline <img> — junk filtered at every step. */
 function pickImage(html, pageUrl) {
   const candidates = [];
@@ -241,17 +298,30 @@ export default {
     const url = normalize(new URL(request.url).searchParams.get('url'));
     if (!url) return json({ error: 'invalid-url' }, 400);
 
+    const asin = AMAZON_HOST.test(url.hostname) ? asinFromUrl(url) : null;
+
     try {
       const response = await fetchWithLimits(url);
       const html = await readCapped(response);
-      return json(extract(html, url));
+      const result = extract(html, url);
+      if (!result.image && asin) {
+        result.image = await amazonImageUrl(asin);
+        if (result.image) result.siteName = 'amazon.com';
+      }
+      return json(result);
     } catch (error) {
       if (error instanceof Response) {
         return new Response(error.body, { status: error.status, headers: CORS });
+      }
+      // Amazon's robot wall is not a failure we can fix by parsing HTML: hand back
+      // the catalogue image when we have an ASIN, so the card still has a picture.
+      if (asin) {
+        const image = await amazonImageUrl(asin);
+        if (image) return json({ title: null, image, siteName: 'amazon.com' });
       }
       return json({ error: 'fetch-failed', detail: error instanceof Error ? error.message : 'unknown' }, 502);
     }
   },
 };
 
-export { isBlockedHost, normalize, extract, metaContent, pickImage };
+export { isBlockedHost, normalize, extract, metaContent, pickImage, asinFromUrl, amazonImageUrl };

@@ -95,6 +95,27 @@ Guards: http(s) only, no redirects to private or link-local address ranges, 6s t
 cap, `text/html` only, image URL must be absolute https and is never rehosted. The client stores
 title, image and site name against the item and never re-fetches on every render.
 
+### Amazon
+
+Amazon answers server requests with a robot wall, so no HTML parsing yields a picture there. The
+ASIN is already in the pasted URL, so the worker builds the catalogue image directly:
+
+```
+https://m.media-amazon.com/images/P/<ASIN>.01._SCLZZZZZZZ_SX500_.jpg
+```
+
+No API key, associate tag or signed request is involved. The result is verified to be an image
+larger than a placeholder before it is offered. If that path returns the 43-byte placeholder
+(some newer catalogue entries), the worker tries Amazon's ASIN image widget; if both fail the card
+says so and offers the manual path. The real fix at scale is Product Advertising API access, which
+needs an Associates account with qualifying sales.
+
+### Pictures by hand
+
+Every item editor accepts a picture URL, and can read an image file from the device (max 2 MB),
+stored as a data URL inside the library so it travels with the JSON backup. This is the only
+guaranteed path for shops that block previews.
+
 ## 7. Screens
 
 | Screen | Contents |
