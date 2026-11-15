@@ -218,3 +218,54 @@ export function monogram(title: string): string {
   const second = words[1]?.[0] ?? '';
   return (first + second).toUpperCase();
 }
+
+/**
+ * Condenses a page title for the card face, the way a link chip reads: drop the
+ * shop name that sites staple on either end, collapse the whitespace, and cut at
+ * a word boundary instead of mid-word. The stored title is never changed — this
+ * is presentation only, so the full text stays available in the editor.
+ */
+export function condenseTitle(title: string, siteName?: string, max = 72): string {
+  let text = title.replace(/\s+/g, ' ').trim();
+
+  const host = siteName?.replace(/^www\./, '').trim();
+  // "UNIQLO" should match "uniqlo.com", so the bare brand counts as the host too.
+  const names = [host, host?.split('.')[0]].filter((value): value is string => Boolean(value && value.length > 2));
+  const separators = ['|', '–', '—', '-', '·', ':'];
+
+  // "Product name | Etsy", "Product – Amazon.com", "GitHub - owner/repo: desc"
+  for (const sep of separators) {
+    const parts = text.split(` ${sep} `);
+    if (parts.length < 2) continue;
+    const first = parts[0]?.trim() ?? '';
+    const last = parts[parts.length - 1]?.trim() ?? '';
+    if (names.some((name) => last.toLowerCase().includes(name.toLowerCase()))) {
+      text = parts.slice(0, -1).join(` ${sep} `).trim();
+      break;
+    }
+    if (names.some((name) => first.toLowerCase().includes(name.toLowerCase()))) {
+      text = parts.slice(1).join(` ${sep} `).trim();
+      break;
+    }
+  }
+
+  if (text.length <= max) return text;
+
+  // Too long: prefer the part before a subtitle separator if that alone fits.
+  const head = text.split(/[|–—:]|\s-\s/)[0]?.trim() ?? '';
+  if (head.length >= 12 && head.length <= max) return head;
+
+  const cut = text.slice(0, max);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > 24 ? cut.slice(0, lastSpace) : cut).replace(/[,;:.\-–—]$/, '')}…`;
+}
+
+/** The site's own favicon, with no third-party service in the middle. */
+export function faviconUrl(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    return `${new URL(url).origin}/favicon.ico`;
+  } catch {
+    return null;
+  }
+}

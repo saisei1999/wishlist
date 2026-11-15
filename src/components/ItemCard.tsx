@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { formatUsd, monogram, targetDelta, TIER_LABELS, type Collection, type Item } from '../model';
+import {
+  condenseTitle,
+  faviconUrl,
+  formatUsd,
+  monogram,
+  targetDelta,
+  TIER_LABELS,
+  type Collection,
+  type Item,
+} from '../model';
 
 type Props = {
   item: Item;
@@ -29,6 +38,10 @@ export function ItemCard({
   // A hotlinked image can 404 or refuse to load; the colour plate is the fallback.
   const [imageBroken, setImageBroken] = useState(false);
   const showImage = Boolean(item.image) && !imageBroken;
+  const [faviconBroken, setFaviconBroken] = useState(false);
+  const [faviconLoaded, setFaviconLoaded] = useState(false);
+  const icon = faviconUrl(item.url);
+  const displayTitle = condenseTitle(item.title, item.siteName);
 
   return (
     <article
@@ -102,13 +115,25 @@ export function ItemCard({
       <div className="card-body">
         {item.url ? (
           <a
-            className="card-title"
+            className="card-title card-link"
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            title={`Open ${item.url}`}
+            title={`${item.title} — ${item.url}`}
           >
-            {item.title}
+            <span className="favicon" aria-hidden="true">
+              <span className={`favicon-dot plate-${item.color}`}>{monogram(displayTitle)}</span>
+              {icon && !faviconBroken ? (
+                <img
+                  src={icon}
+                  alt=""
+                  className={faviconLoaded ? 'is-loaded' : ''}
+                  onLoad={() => setFaviconLoaded(true)}
+                  onError={() => setFaviconBroken(true)}
+                />
+              ) : null}
+            </span>
+            <span className="card-title-text">{displayTitle}</span>
           </a>
         ) : (
           <button type="button" className="card-title" onClick={(event) => onOpen(item, event.currentTarget)}>

@@ -7,6 +7,7 @@ import { ItemCard } from './components/ItemCard';
 import { SettingsView } from './components/SettingsView';
 import {
   byTierAndOrder,
+  condenseTitle,
   DEFAULT_SETTINGS,
   formatUsd,
   monogram,
@@ -186,7 +187,11 @@ export default function App() {
         const outcome = await unfurl(settings.proxyUrl, input.url);
         if (outcome.ok) {
           const patch: Partial<Item> = { updatedAt: nowIso() };
-          if (outcome.result.title) patch.title = outcome.result.title.slice(0, 160);
+          // Store the readable title, not the page's whole document title: the
+          // card should read like a bookmark chip, and search works better too.
+          if (outcome.result.title) {
+            patch.title = condenseTitle(outcome.result.title, outcome.result.siteName ?? undefined).slice(0, 160);
+          }
           if (outcome.result.image) patch.image = outcome.result.image;
           if (outcome.result.siteName) patch.siteName = outcome.result.siteName;
           const latest = { ...item, ...patch };
@@ -420,7 +425,7 @@ export default function App() {
                 </div>
                 <div className="body">
                   <p className="eyebrow">NEXT BUY</p>
-                  <h2>{featured.title}</h2>
+                  <h2>{condenseTitle(featured.title, featured.siteName ?? undefined, 64)}</h2>
                   <p className="meta">
                     {formatUsd(featured.price) ? <span>{formatUsd(featured.price)}</span> : <span>No price yet</span>}
                     {featured.why ? <span>{featured.why}</span> : null}
