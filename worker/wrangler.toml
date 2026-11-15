@@ -1,0 +1,7 @@
+name = "wishlist-unfurl"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# Free plan is fine: 100k requests/day, no database, no binding.
+# Deploy:  npx wrangler deploy --config worker/wrangler.toml
+# Then paste the printed URL into Wishlist → Settings → Link previews.
