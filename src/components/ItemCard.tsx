@@ -17,7 +17,7 @@ type Props = {
   collections: Collection[];
   onOpen: (item: Item, trigger?: HTMLElement | null) => void;
   onFetchImage: (item: Item) => void;
-  onAddBrand: (item: Item, trigger?: HTMLElement | null) => void;
+  onAddBrand: (item: Item, brand: string) => void;
   canFetchImage: boolean;
   onDragStart: (item: Item) => void;
   onDropBefore: (draggedId: string, targetId: string) => void;
@@ -44,6 +44,8 @@ export function ItemCard({
   const showImage = Boolean(item.image) && !imageBroken;
   const [faviconBroken, setFaviconBroken] = useState(false);
   const [faviconLoaded, setFaviconLoaded] = useState(false);
+  const [namingBrand, setNamingBrand] = useState(false);
+  const [brandDraft, setBrandDraft] = useState('');
   const icon = faviconUrl(item.url);
   const displayTitle = condenseTitle(item.title, item.siteName);
   const shop = brandName(item);
@@ -175,13 +177,49 @@ export function ItemCard({
           {item.tags.length > 2 ? <span className="chip">+{item.tags.length - 2}</span> : null}
           {/* No maker known for this one: offer to name it rather than guess. */}
           {!product && shop ? (
-            <button
-              type="button"
-              className="chip chip-add"
-              onClick={(event) => onAddBrand(item, event.currentTarget)}
-            >
-              + brand
-            </button>
+            namingBrand ? (
+              <label className="chip chip-add-input">
+                <span className="sr-only">Item brand for {item.title}</span>
+                <input
+                  autoFocus
+                  value={brandDraft}
+                  maxLength={60}
+                  placeholder="Shure"
+                  onChange={(event) => setBrandDraft(event.target.value)}
+                  onBlur={() => {
+                    const value = brandDraft.trim();
+                    if (value) onAddBrand(item, value);
+                    setNamingBrand(false);
+                    setBrandDraft('');
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      const value = brandDraft.trim();
+                      if (value) onAddBrand(item, value);
+                      setNamingBrand(false);
+                      setBrandDraft('');
+                    }
+                    if (event.key === 'Escape') {
+                      event.preventDefault();
+                      setNamingBrand(false);
+                      setBrandDraft('');
+                    }
+                  }}
+                />
+              </label>
+            ) : (
+              <button
+                type="button"
+                className="chip chip-add"
+                onClick={() => {
+                  setBrandDraft('');
+                  setNamingBrand(true);
+                }}
+              >
+                + brand
+              </button>
+            )
           ) : null}
         </div>
       </div>

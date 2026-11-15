@@ -592,7 +592,9 @@ export default function App() {
                         setNotice('That page carries no preview picture. Paste an image URL in the editor.');
                       }
                     }}
-                    onAddBrand={(target, trigger) => openEditor(target, trigger, 'brand')}
+                    onAddBrand={(target, brand) => {
+                      void updateItem(target.id, { brand });
+                    }}
 
                     onDragStart={() => undefined}
                     onDropBefore={(draggedId, targetId) => {
