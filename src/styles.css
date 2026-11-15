@@ -384,6 +384,14 @@ h1 .count { font-size: 15px; font-weight: 600; color: #5b7381; margin-left: 8px;
   font-weight: 700;
   letter-spacing: -0.1px;
 }
+/* The shop that sells it: present, quiet, never competing with the product. */
+.chip-shop {
+  color: #6b818c;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
 .chip-sep {
   margin: 0 5px;
   color: #93a7ae;

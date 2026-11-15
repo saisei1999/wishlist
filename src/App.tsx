@@ -11,6 +11,7 @@ import {
   condenseTitle,
   DEFAULT_SETTINGS,
   formatUsd,
+  itemBrandSpan,
   monogram,
   newId,
   nextBuy,
@@ -429,11 +430,22 @@ export default function App() {
                   <h2>
                     {brandName(featured) ? (
                       <>
-                        <strong className="chip-brand">{brandName(featured)}</strong>
+                        <span className="chip-shop">{brandName(featured)}</span>
                         <span className="chip-sep">·</span>
                       </>
                     ) : null}
-                    {condenseTitle(featured.title, featured.siteName ?? undefined, 64)}
+                    {(() => {
+                      const line = condenseTitle(featured.title, featured.siteName ?? undefined, 64);
+                      const product = itemBrandSpan(line, featured.brand);
+                      return product ? (
+                        <>
+                          <strong className="chip-brand">{product.brand}</strong>
+                          {product.rest ? ` ${product.rest}` : null}
+                        </>
+                      ) : (
+                        line
+                      );
+                    })()}
                   </h2>
                   <p className="meta">
                     {formatUsd(featured.price) ? <span>{formatUsd(featured.price)}</span> : <span>No price yet</span>}

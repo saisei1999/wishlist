@@ -21,6 +21,8 @@ export type Item = {
   url?: string;
   image?: string;
   siteName?: string;
+  /** The product's own brand ("Shure"), as opposed to the shop selling it. */
+  brand?: string;
   price?: number;
   wasPrice?: number;
   targetPrice?: number;
@@ -297,4 +299,54 @@ export function brandName(item: { siteName?: string; url?: string }): string | n
   } catch {
     return null;
   }
+}
+
+/**
+ * The product's own brand, split out of the title so it can be emphasised
+ * separately from the shop that sells it.
+ *
+ * With an explicit brand (typed in the editor) the title is split on it. Without
+ * one, the leading run only counts as a brand when it carries a model code —
+ * "Shure MV7X", "Sony WH-1000XM5" — because bolding "Unisex" or "Cotton" would be
+ * worse than bolding nothing.
+ */
+export function itemBrandSpan(
+  title: string,
+  explicitBrand?: string,
+): { brand: string; rest: string } | null {
+  const text = title.replace(/\s+/g, ' ').trim();
+  const named = explicitBrand?.trim();
+
+  if (named) {
+    const index = text.toLowerCase().indexOf(named.toLowerCase());
+    if (index === 0) {
+      return { brand: text.slice(0, named.length), rest: text.slice(named.length).replace(/^[\s,:–—-]+/, '') };
+    }
+    if (index > 0) {
+      const before = text.slice(0, index).trim();
+      return {
+        brand: text.slice(index, index + named.length),
+        rest: `${before} ${text.slice(index + named.length)}`.replace(/\s+/g, ' ').trim(),
+      };
+    }
+    // The title does not mention it — usually an Amazon page whose title is just
+    // "XLR Podcast Microphone". The typed brand leads anyway; it was set on purpose.
+    return { brand: named, rest: text };
+  }
+
+  const tokens = text.split(' ');
+  const first = tokens[0];
+  if (!first || !/^[A-Z0-9]/.test(first)) return null;
+
+  const span = [first];
+  for (const token of tokens.slice(1)) {
+    if (span.length >= 3) break;
+    if (!/[0-9]/.test(token)) break;
+    span.push(token);
+  }
+  // No model code in the run means the brand is not actually known.
+  if (!span.slice(1).some((token) => /[0-9]/.test(token))) return null;
+
+  const brand = span.join(' ');
+  return { brand, rest: text.slice(brand.length).replace(/^[\s,:–—-]+/, '') };
 }

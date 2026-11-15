@@ -26,6 +26,7 @@ type Props = {
 
 type FormState = {
   title: string;
+  brand: string;
   url: string;
   image: string;
   why: string;
@@ -41,6 +42,7 @@ type FormState = {
 function toForm(item: Item): FormState {
   return {
     title: item.title,
+    brand: item.brand ?? '',
     url: item.url ?? '',
     image: item.image ?? '',
     why: item.why ?? '',
@@ -128,6 +130,7 @@ export function EditorPane({ item, collections, tagSuggestions, proxyUrl, onClos
     setError('');
     const patch: Partial<Item> = {
       title: form.title.trim().slice(0, 160),
+      brand: form.brand.trim().slice(0, 60) || undefined,
       url: form.url.trim() && isHttpUrl(form.url) ? form.url.trim() : undefined,
       image: form.image.trim() || undefined,
       why: form.why.trim().slice(0, 200),
@@ -237,6 +240,22 @@ export function EditorPane({ item, collections, tagSuggestions, proxyUrl, onClos
             maxLength={200}
             onChange={(e) => set('why', e.target.value)}
           />
+        </label>
+
+        <label className="field">
+          <span>
+            Item brand <small>the maker, not the shop — e.g. Shure</small>
+          </span>
+          <input
+            placeholder="Shure"
+            value={form.brand}
+            maxLength={60}
+            onChange={(e) => set('brand', e.target.value)}
+            aria-describedby="brand-note"
+          />
+          <p className="hint-note" id="brand-note">
+            Shown bold at the start of the card title, after the shop name.
+          </p>
         </label>
 
         <div className="field">

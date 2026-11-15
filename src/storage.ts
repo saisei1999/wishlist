@@ -133,6 +133,7 @@ function validateItem(value: unknown, seen: Set<string>): Item {
   if (item.url !== undefined && item.url !== '' && (typeof item.url !== 'string' || !isHttpUrl(item.url)))
     fail('Invalid url');
   if (item.image !== undefined && item.image !== '' && typeof item.image !== 'string') fail('Invalid image');
+  if (item.brand !== undefined && item.brand !== '' && typeof item.brand !== 'string') fail('Invalid brand');
   for (const key of ['price', 'wasPrice', 'targetPrice'] as const) {
     const amount = item[key];
     if (amount !== undefined && (typeof amount !== 'number' || !Number.isFinite(amount) || amount < 0))

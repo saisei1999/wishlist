@@ -4,6 +4,7 @@ import {
   condenseTitle,
   faviconUrl,
   formatUsd,
+  itemBrandSpan,
   monogram,
   targetDelta,
   TIER_LABELS,
@@ -43,12 +44,11 @@ export function ItemCard({
   const [faviconLoaded, setFaviconLoaded] = useState(false);
   const icon = faviconUrl(item.url);
   const displayTitle = condenseTitle(item.title, item.siteName);
-  const brand = brandName(item);
-  // The brand already leads the chip, so drop it from the tail of the title.
-  const titleTail =
-    brand && displayTitle.toLowerCase().startsWith(brand.toLowerCase())
-      ? displayTitle.slice(brand.length).replace(/^[\s:–—|-]+/, '')
-      : displayTitle;
+  const shop = brandName(item);
+  // Two different brands can appear on one card: the shop it is sold by, and the
+  // product's own maker. The shop leads quietly; the product brand is emphasised.
+  const product = itemBrandSpan(displayTitle, item.brand);
+  const titleTail = displayTitle;
 
   return (
     <article
@@ -141,13 +141,20 @@ export function ItemCard({
               ) : null}
             </span>
             <span className="card-title-text">
-              {brand ? (
+              {shop ? (
                 <>
-                  <strong className="chip-brand">{brand}</strong>
-                  {titleTail ? <span className="chip-sep">·</span> : null}
+                  <span className="chip-shop">{shop}</span>
+                  <span className="chip-sep">·</span>
                 </>
               ) : null}
-              {titleTail}
+              {product ? (
+                <>
+                  <strong className="chip-brand">{product.brand}</strong>
+                  {product.rest ? ` ${product.rest}` : null}
+                </>
+              ) : (
+                titleTail
+              )}
             </span>
           </a>
         ) : (
